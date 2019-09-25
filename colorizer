@@ -1,0 +1,70 @@
+#!/bin/bash
+
+dir=~/.themes/colorizer/
+pwd=/usr/bin/pwd
+xfwm="one_new"
+gtk="fantome"
+
+fill_color() {
+	get_color() {
+		xrdb -query | grep "^*$1" -m 1 | cut -f 2 | cut -d'#' -f 2
+	}
+
+	get_colors_bg=$(get_color "background")
+}
+
+xfwm_themer() {
+	if [ ! -d "$dir"xfwm4/ ]; then
+		mkdir -p "$dir"xfwm4/
+	else
+		rm "$dir"xfwm4/*
+	fi
+
+	cp "$($pwd)"/xfwm4/"$1"/* "$dir"xfwm4/
+	sed -i s/"color_bg"/"${get_colors_bg}"/g "$dir"xfwm4/*
+	sed -i s/"color_1"/"$(get_color "color1")"/g "$dir"xfwm4/*
+	sed -i s/"color_2"/"$(get_color "color2")"/g "$dir"xfwm4/*
+	sed -i s/"color_3"/"$(get_color "color3")"/g "$dir"xfwm4/*
+	sed -i s/"color_4"/"$(get_color "color4")"/g "$dir"xfwm4/*
+	sed -i s/"color_5"/"$(get_color "color5")"/g "$dir"xfwm4/*
+	sed -i s/"color_6"/"$(get_color "color6")"/g "$dir"xfwm4/*
+	sed -i s/"color_7"/"$(get_color "color7")"/g "$dir"xfwm4/*
+}
+
+gtk_themer() {
+	rm -rf "$dir"gtk-*
+	cp -r "$($pwd)"/gtk/"$1"/* "$dir"
+
+	find "$dir"gtk-2.0/ -type f -exec sed -i s/"color_bg"/"${get_colors_bg}"/g {} \;
+	find "$dir"gtk-2.0/ -type f -exec sed -i s/"color_2"/"$(get_color "color2")"/g {} \;
+	find "$dir"gtk-2.0/ -type f -exec sed -i s/"color_1"/"$(get_color "color1")"/g {} \;
+	find "$dir"gtk-2.0/ -type f -exec sed -i s/"color_7"/"$(get_color "color7")"/g {} \;
+	find "$dir"gtk-2.0/menubar-toolbar/ -type f -exec sed -i s/"color_bg"/"${get_colors_bg}"/g {} \;
+	find "$dir"gtk-2.0/menubar-toolbar/ -type f -exec sed -i s/"color_2"/"$(get_color "color2")"/g {} \;
+	find "$dir"gtk-2.0/menubar-toolbar/ -type f -exec sed -i s/"color_7"/"$(get_color "color2")"/g {} \;
+	find "$dir"gtk-3.0/ -type f -exec sed -i s/"color_bg"/"${get_colors_bg}"/g {} \;
+	find "$dir"gtk-3.0/ -type f -exec sed -i s/"color_2"/"$(get_color "color2")"/g {} \;
+	find "$dir"gtk-3.0/ -type f -exec sed -i s/"color_7"/"$(get_color "color7")"/g {} \;
+}
+
+apply_theme() {
+	xfconf-query -c xfwm4 -p /general/theme -s "adwaita"
+	xfconf-query -c xfwm4 -p /general/theme -s "colorizer"
+	xfconf-query -c xsettings -p /Net/ThemeName -s "adwaita"
+	xfconf-query -c xsettings -p /Net/ThemeName -s "colorizer"
+}
+
+mkdir -p ~/.themes/colorizer
+fill_color
+
+echo "Generating XFWM4 theme"
+xfwm_themer $xfwm
+
+echo "Generating gtk theme"
+gtk_themer $gtk
+cd "$dir"gtk-2.0/ || exit 1
+"$dir"gtk-2.0/render-assets.sh
+cd "$dir"gtk-3.0/ || exit 1
+"$dir"gtk-3.0/render-assets.sh
+
+apply_theme
